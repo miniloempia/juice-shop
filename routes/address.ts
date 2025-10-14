@@ -5,6 +5,7 @@
 
 import { type Request, type Response } from 'express'
 import { AddressModel } from '../models/address'
+import { Op } from 'sequelize'
 
 module.exports.getAddress = function getAddress () {
   return async (req: Request, res: Response) => {
@@ -15,7 +16,7 @@ module.exports.getAddress = function getAddress () {
 
 module.exports.getAddressById = function getAddressById () {
   return async (req: Request, res: Response) => {
-    const address = await AddressModel.findOne({ where: { id: req.params.id, UserId: req.body.UserId } })
+    const address = await AddressModel.findOne({ where: { id: { [Op.eq]: req.params.id }, UserId: { [Op.eq]: req.body.UserId } } })
     if (address != null) {
       res.status(200).json({ status: 'success', data: address })
     } else {
