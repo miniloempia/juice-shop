@@ -109,18 +109,24 @@ module.exports = function placeOrder () {
             doc.moveDown()
             totalPrice -= parseFloat(discountAmount)
           }
-          const deliveryMethod = {
-            deluxePrice: 0,
-            price: 0,
-            eta: 5
+          // Security fix: Validate delivery method ID to prevent free shipping exploit
+          // Ensure a delivery method ID is provided in the request
+          if (!req.body.orderDetails?.deliveryMethodId) {
+            next(new Error('Delivery method ID is required for checkout.'))
+            return
           }
-          if (req.body.orderDetails?.deliveryMethodId) {
-            const deliveryMethodFromModel = await DeliveryModel.findOne({ where: { id: req.body.orderDetails.deliveryMethodId } })
-            if (deliveryMethodFromModel != null) {
-              deliveryMethod.deluxePrice = deliveryMethodFromModel.deluxePrice
-              deliveryMethod.price = deliveryMethodFromModel.price
-              deliveryMethod.eta = deliveryMethodFromModel.eta
-            }
+          // Look up the delivery method in the database
+          const deliveryMethodFromModel = await DeliveryModel.findOne({ where: { id: req.body.orderDetails.deliveryMethodId } })
+          // Reject the request if the delivery method doesn't exist (prevents using invalid IDs to get free shipping)
+          if (deliveryMethodFromModel == null) {
+            next(new Error('Invalid delivery method ID.'))
+            return
+          }
+          // Use the validated delivery method data from the database
+          const deliveryMethod = {
+            deluxePrice: deliveryMethodFromModel.deluxePrice,
+            price: deliveryMethodFromModel.price,
+            eta: deliveryMethodFromModel.eta
           }
           const deliveryAmount = security.isDeluxe(req) ? deliveryMethod.deluxePrice : deliveryMethod.price
           totalPrice += deliveryAmount
