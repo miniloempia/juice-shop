@@ -98,7 +98,7 @@ describe('/rest/basket/:id', () => {
       headers: jsonHeader,
       body: {
         email: 'bjoern.kimminich@gmail.com',
-        password: 'bW9jLmxpYW1nQGhjaW5pbW1pay5ucmVvamI='
+        password: '****amI='
       }
     })
       .expect('status', 200)
@@ -118,7 +118,16 @@ describe('/rest/basket/:id/checkout', () => {
   })
 
   it('POST placing an order for an existing basket returns orderId', () => {
-    return frisby.post(REST_URL + '/basket/1/checkout', { headers: authHeader })
+    return frisby.post(REST_URL + '/basket/1/checkout', {
+      headers: authHeader,
+      body: {
+        orderDetails: {
+          deliveryMethodId: 1,
+          paymentId: 'card',
+          addressId: 1
+        }
+      }
+    })
       .expect('status', 200)
       .then(({ json }) => {
         expect(json.orderConfirmation).toBeDefined()
@@ -126,9 +135,118 @@ describe('/rest/basket/:id/checkout', () => {
   })
 
   it('POST placing an order for a non-existing basket fails', () => {
-    return frisby.post(REST_URL + '/basket/42/checkout', { headers: authHeader })
+    return frisby.post(REST_URL + '/basket/42/checkout', {
+      headers: authHeader,
+      body: {
+        orderDetails: {
+          deliveryMethodId: 1,
+          paymentId: 'card',
+          addressId: 1
+        }
+      }
+    })
       .expect('status', 500)
       .expect('bodyContains', 'Error: Basket with id=42 does not exist.')
+  })
+
+  it('POST placing an order without deliveryMethodId fails', () => {
+    return frisby.post(REST_URL + '/basket/1/checkout', {
+      headers: authHeader,
+      body: {
+        orderDetails: {
+          paymentId: 'card',
+          addressId: 1
+        }
+      }
+    })
+      .expect('status', 500)
+      .expect('bodyContains', 'Error: Delivery method ID is required for checkout.')
+  })
+
+  it('POST placing an order with null deliveryMethodId fails', () => {
+    return frisby.post(REST_URL + '/basket/1/checkout', {
+      headers: authHeader,
+      body: {
+        orderDetails: {
+          deliveryMethodId: null,
+          paymentId: 'card',
+          addressId: 1
+        }
+      }
+    })
+      .expect('status', 500)
+      .expect('bodyContains', 'Error: Delivery method ID is required for checkout.')
+  })
+
+  it('POST placing an order with undefined deliveryMethodId fails', () => {
+    return frisby.post(REST_URL + '/basket/1/checkout', {
+      headers: authHeader,
+      body: {
+        orderDetails: {
+          deliveryMethodId: undefined,
+          paymentId: 'card',
+          addressId: 1
+        }
+      }
+    })
+      .expect('status', 500)
+      .expect('bodyContains', 'Error: Delivery method ID is required for checkout.')
+  })
+
+  it('POST placing an order with invalid deliveryMethodId fails', () => {
+    return frisby.post(REST_URL + '/basket/1/checkout', {
+      headers: authHeader,
+      body: {
+        orderDetails: {
+          deliveryMethodId: 9999,
+          paymentId: 'card',
+          addressId: 1
+        }
+      }
+    })
+      .expect('status', 500)
+      .expect('bodyContains', 'Error: Invalid delivery method ID.')
+  })
+
+  it('POST placing an order with non-existent deliveryMethodId fails', () => {
+    return frisby.post(REST_URL + '/basket/1/checkout', {
+      headers: authHeader,
+      body: {
+        orderDetails: {
+          deliveryMethodId: 999,
+          paymentId: 'card',
+          addressId: 1
+        }
+      }
+    })
+      .expect('status', 500)
+      .expect('bodyContains', 'Error: Invalid delivery method ID.')
+  })
+
+  it('POST placing an order with valid deliveryMethodId succeeds', () => {
+    return frisby.post(REST_URL + '/basket/1/checkout', {
+      headers: authHeader,
+      body: {
+        orderDetails: {
+          deliveryMethodId: 2,
+          paymentId: 'card',
+          addressId: 1
+        }
+      }
+    })
+      .expect('status', 200)
+      .then(({ json }) => {
+        expect(json.orderConfirmation).toBeDefined()
+      })
+  })
+
+  it('POST placing an order without orderDetails object fails', () => {
+    return frisby.post(REST_URL + '/basket/1/checkout', {
+      headers: authHeader,
+      body: {}
+    })
+      .expect('status', 500)
+      .expect('bodyContains', 'Error: Delivery method ID is required for checkout.')
   })
 
   it('POST placing an order for a basket with a negative total cost is possible', () => {
@@ -138,7 +256,16 @@ describe('/rest/basket/:id/checkout', () => {
     })
       .expect('status', 200)
       .then(() => {
-        return frisby.post(REST_URL + '/basket/3/checkout', { headers: authHeader })
+        return frisby.post(REST_URL + '/basket/3/checkout', {
+          headers: authHeader,
+          body: {
+            orderDetails: {
+              deliveryMethodId: 1,
+              paymentId: 'card',
+              addressId: 1
+            }
+          }
+        })
           .expect('status', 200)
           .then(({ json }) => {
             expect(json.orderConfirmation).toBeDefined()
@@ -152,7 +279,16 @@ describe('/rest/basket/:id/checkout', () => {
       .expect('header', 'content-type', /application\/json/)
       .expect('json', { discount: 99 })
       .then(() => {
-        return frisby.post(REST_URL + '/basket/2/checkout', { headers: authHeader })
+        return frisby.post(REST_URL + '/basket/2/checkout', {
+          headers: authHeader,
+          body: {
+            orderDetails: {
+              deliveryMethodId: 1,
+              paymentId: 'card',
+              addressId: 1
+            }
+          }
+        })
           .expect('status', 200)
           .then(({ json }) => {
             expect(json.orderConfirmation).toBeDefined()
