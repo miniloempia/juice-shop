@@ -120,6 +120,9 @@ module.exports = function placeOrder () {
               deliveryMethod.deluxePrice = deliveryMethodFromModel.deluxePrice
               deliveryMethod.price = deliveryMethodFromModel.price
               deliveryMethod.eta = deliveryMethodFromModel.eta
+            } else {
+              next(new Error('Invalid delivery method.'))
+              return
             }
           }
           const deliveryAmount = security.isDeluxe(req) ? deliveryMethod.deluxePrice : deliveryMethod.price
