@@ -109,18 +109,19 @@ module.exports = function placeOrder () {
             doc.moveDown()
             totalPrice -= parseFloat(discountAmount)
           }
-          const deliveryMethod = {
-            deluxePrice: 0,
-            price: 0,
-            eta: 5
+          if (!req.body.orderDetails?.deliveryMethodId) {
+            next(new Error('Delivery method ID is required.'))
+            return
           }
-          if (req.body.orderDetails?.deliveryMethodId) {
-            const deliveryMethodFromModel = await DeliveryModel.findOne({ where: { id: req.body.orderDetails.deliveryMethodId } })
-            if (deliveryMethodFromModel != null) {
-              deliveryMethod.deluxePrice = deliveryMethodFromModel.deluxePrice
-              deliveryMethod.price = deliveryMethodFromModel.price
-              deliveryMethod.eta = deliveryMethodFromModel.eta
-            }
+          const deliveryMethodFromModel = await DeliveryModel.findOne({ where: { id: req.body.orderDetails.deliveryMethodId } })
+          if (deliveryMethodFromModel == null) {
+            next(new Error('Invalid delivery method ID.'))
+            return
+          }
+          const deliveryMethod = {
+            deluxePrice: deliveryMethodFromModel.deluxePrice,
+            price: deliveryMethodFromModel.price,
+            eta: deliveryMethodFromModel.eta
           }
           const deliveryAmount = security.isDeluxe(req) ? deliveryMethod.deluxePrice : deliveryMethod.price
           totalPrice += deliveryAmount
